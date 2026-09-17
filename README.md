@@ -133,10 +133,12 @@ on every launch.
 [AGENTS.md](AGENTS.md) is the guide for coding agents, and the fastest way for
 a human to understand the architecture too.
 
-## Fonts
+## License
+
+The code is [MIT](LICENSE).
 
 The bundled faces are [Geist](https://vercel.com/font) — Sans, Mono and Pixel —
-by Vercel, licensed under the SIL Open Font License 1.1. The OFL permits
-redistribution but **requires the licence text to accompany the font files**.
-If you fork and redistribute this repo, keep `OFL.txt` alongside
-`src/fonts/`.
+by Vercel, under the SIL Open Font License 1.1. That is a separate license
+covering only the font files, not this project's code. The OFL permits
+redistribution but **requires its text to travel with the fonts**, so keep
+[`src/fonts/OFL.txt`](src/fonts/OFL.txt) in place if you fork this.
