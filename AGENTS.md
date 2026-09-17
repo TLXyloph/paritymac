@@ -15,7 +15,8 @@ inside the app bundle over a custom `pcp://` URL scheme. Keep it that way.
 
 ```
 src/levels.js          problem generators, one per level
-src/engine.js          state, timing, scoring, history, input — skin-agnostic
+src/engine.js          state, timing, scoring, input — skin-agnostic
+src/history.js         the history screen: high scores, recent runs, averages
 src/skins.js           skin registry
 src/base.css           @font-face, reset, centring. Deliberately boring.
 src/index.html         the one DOM every skin renders into

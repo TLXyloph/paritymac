@@ -376,59 +376,10 @@
   /* ---- history ------------------------------------------------------------ */
 
   function renderHistory() {
-    var h = loadHistory();
-    q('hist-total').textContent = h.length;
-    q('hist-label').textContent = h.length === 1 ? 'run' : 'runs';
-
-    q('hist-finals').innerHTML = [
-      ['runs', String(h.length)],
-      ['best score', String(h.reduce(function (b, r) { return r.score > b ? r.score : b; }, 0))],
-      ['best streak', String(h.reduce(function (b, r) { return (r.streak || 0) > b ? r.streak : b; }, 0))]
-    ].map(function (f) {
-      return '<span class="final"><span class="k">' + f[0] + '</span><b>' + f[1] + '</b></span>';
-    }).join('');
-
-    // Best is per configuration, so a 30s run never outranks a 300s one.
-    var best = {};
-    h.forEach(function (r) {
-      var k = configKey(r.dur, r.levels);
-      if (!(k in best) || r.score > best[k]) best[k] = r.score;
+    PCP.renderHistory({
+      runs: loadHistory(), q: q, configKey: configKey,
+      rateOf: rateOf, stamp: stamp, setCap: setCap
     });
-
-    var recent = h.slice().reverse().slice(0, 12);
-    setCap('runs-cap', recent.length);
-    q('runs').innerHTML = recent.length
-      ? recent.map(function (r) {
-          var s = stamp(r.t);
-          var isBest = r.score > 0 && r.score === best[configKey(r.dur, r.levels)];
-          return '<div class="run" data-best="' + isBest + '">' +
-            '<span>' + s.day + '</span><span>' + s.time + '</span>' +
-            '<span>' + r.dur + 's</span>' +
-            '<span class="score">' + r.score + '</span>' +
-            '<span class="rate">' + rateOf(r) + '/min</span>' +
-            '<span class="flag">' + (isBest ? 'best' : '') + '</span></div>';
-        }).join('')
-      : '<div class="empty">no runs yet</div>';
-
-    var agg = {};
-    h.forEach(function (r) {
-      Object.keys(r.stats || {}).forEach(function (k) {
-        var a = agg[k] || (agg[k] = { n: 0, ms: 0 });
-        a.n += r.stats[k].s + r.stats[k].m;
-        a.ms += r.stats[k].ms;
-      });
-    });
-    var rows = PCP.LEVELS.filter(function (lv) { return agg[lv.n] && agg[lv.n].n; })
-      .map(function (lv) {
-        var a = agg[lv.n];
-        return '<div class="lt"><span class="n">' + lv.n + '</span>' +
-          '<span class="name">' + lv.name + '</span>' +
-          '<span class="v">' + a.n + '</span>' +
-          '<span class="v">' + (a.ms / a.n / 1000).toFixed(1) + 's</span></div>';
-      });
-    setCap('lifetime-cap', rows.length);
-    q('lifetime').innerHTML = rows.join('');
-    q('history-hint').textContent = 'esc back';
   }
 
   screenOf('history').addEventListener('click', function (e) {

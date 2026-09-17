@@ -23,7 +23,10 @@ html, body { height: 100%; }
 body {
   margin: 0;
   display: grid;
-  place-items: center;
+  /* "safe" falls back to start alignment when content is taller than the
+     viewport; plain centring would clip the top beyond reach. */
+  place-items: safe center;
+  overflow-y: auto;
   padding: 24px;
   -webkit-font-smoothing: antialiased;
   font-variant-numeric: tabular-nums;
@@ -37,5 +40,8 @@ body {
 [data-pcp="answer"] { font: inherit; border: 0; outline: 0; background: transparent; }
 [data-pcp="caret"] { display: none; }
 
-/* Captions hide themselves when the engine reports no rows to label. */
-.cap[data-show="false"] { display: none; }
+/* Captions stay hidden until the engine reports rows to label. Defaulting to
+   hidden rather than shown means a render that never runs cannot leave an
+   orphan caption on screen. */
+.cap { display: none; }
+.cap[data-show="true"] { display: block; }

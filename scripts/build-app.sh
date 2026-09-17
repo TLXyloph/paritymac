@@ -32,7 +32,8 @@ swiftc -O -target "$(uname -m)-apple-macos12.0" \
 echo "==> bundling web assets"
 WEB="$APP/Contents/Resources/web"
 cp "$ROOT/src/index.html" "$ROOT/src/base.css" \
-   "$ROOT/src/engine.js" "$ROOT/src/skins.js" "$ROOT/src/levels.js" "$WEB/"
+   "$ROOT/src/engine.js" "$ROOT/src/history.js" \
+   "$ROOT/src/skins.js" "$ROOT/src/levels.js" "$WEB/"
 cp -R "$ROOT/src/skins" "$WEB/skins"
 cp -R "$ROOT/src/fonts" "$WEB/fonts"
 

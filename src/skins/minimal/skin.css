@@ -122,6 +122,18 @@ body { background: var(--bg); color: var(--fg); font-family: var(--mono); }
 .miss { font-family: var(--sans); font-size: 14px; line-height: 1.9; color: var(--dim); }
 .miss .was { color: var(--fg); }
 
+.highs {
+  display: grid; grid-template-columns: 3.4em 5em 2.8em 5em 4.6em;
+  align-items: baseline; column-gap: 1.1em;
+  font-family: var(--mono); font-size: 13px; line-height: 2.1; margin-bottom: 34px;
+}
+.high { display: contents; }
+.high span { color: var(--dim); }
+.high .score { color: var(--fg); text-align: right; }
+.high .rate { text-align: right; }
+.high[data-top='true'] span { color: var(--fg); }
+[data-pcp="highs-cap"]::before { content: "high scores · time · levels · best"; }
+
 .runs {
   display: grid; grid-template-columns: 4.4em 3.6em 3.2em 2.8em 5em 3em;
   align-items: baseline; column-gap: 1.1em;
