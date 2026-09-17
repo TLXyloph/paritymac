@@ -1,0 +1,41 @@
+/* Shared foundation: the bundled faces, a reset, and centring.
+   Everything visual belongs to the skin. Keep this file boring. */
+
+@font-face {
+  font-family: 'Geist';
+  src: url('fonts/Geist-Variable.woff2') format('woff2');
+  font-weight: 100 900; font-style: normal; font-display: block;
+}
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('fonts/GeistMono-Variable.woff2') format('woff2');
+  font-weight: 100 900; font-style: normal; font-display: block;
+}
+@font-face {
+  font-family: 'Geist Pixel';
+  src: url('fonts/GeistPixel.woff2') format('woff2');
+  font-weight: 400; font-style: normal; font-display: block;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  -webkit-font-smoothing: antialiased;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Beats any display value a skin sets, which is otherwise an easy trap. */
+[hidden] { display: none !important; }
+
+#app { width: 100%; }
+
+[data-pcp="answer"] { font: inherit; border: 0; outline: 0; background: transparent; }
+[data-pcp="caret"] { display: none; }
+
+/* Captions hide themselves when the engine reports no rows to label. */
+.cap[data-show="false"] { display: none; }

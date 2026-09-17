@@ -1,28 +1,28 @@
-/* Paritycade — screen flow, timing and input for the arcade variant.
-   Shares levels.js with Paritymac; the drill logic is identical, the
-   presentation and the feedback are not. */
+/* Drill engine: state, timing, scoring, history and input.
+   Skin-agnostic — it only ever writes into [data-pcp] slots. */
 (function () {
   'use strict';
 
-  var PCP = window.PCP;
-  var $ = function (id) { return document.getElementById(id); };
-
   var DURATIONS = [30, 60, 120, 300];
-  var STORE = 'paritycade.settings';
-  var HIST = 'paritycade.history';
+  var STORE = 'pcp.settings';
+  var HIST = 'pcp.history';
   var HIST_MAX = 200;
-  var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   var TIME_CELLS = 40;
   var STREAK_PIPS = 8;
+  var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-  var cfg = load();
+  var q = function (name) { return document.querySelector('[data-pcp="' + name + '"]'); };
+  var screenOf = function (n) { return document.querySelector('[data-screen="' + n + '"]'); };
+
+  var skin = PCP.applySkin((PCP.currentSkin() || {}).id);
+  var cfg = loadCfg();
   var game = null;
   var ticker = null;
 
-  /* ---- settings ---------------------------------------------------------- */
+  /* ---- storage ------------------------------------------------------------ */
 
-  function load() {
+  function loadCfg() {
     var d = { enabled: [2, 3, 4, 5, 6, 7], duration: 120, enter: false };
     try {
       var raw = JSON.parse(localStorage.getItem(STORE));
@@ -36,11 +36,9 @@
     return d;
   }
 
-  function save() {
+  function saveCfg() {
     try { localStorage.setItem(STORE, JSON.stringify(cfg)); } catch (e) { /* ignore */ }
   }
-
-  /* ---- run history -------------------------------------------------------- */
 
   function loadHistory() {
     try {
@@ -68,92 +66,103 @@
   }
 
   function rateOf(r) { return (r.score / (r.dur / 60)).toFixed(1); }
+  function padScore(n) { return skin && skin.scorePad ? String(n).padStart(skin.scorePad, '0') : String(n); }
 
   function stamp(ms) {
     var d = new Date(ms);
     return {
       day: d.getDate() + ' ' + MONTHS[d.getMonth()],
-      time: String(d.getHours()).padStart(2, '0') + ':' +
-            String(d.getMinutes()).padStart(2, '0')
+      time: String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0')
     };
   }
 
+  function setCap(name, show) { q(name).dataset.show = show ? 'true' : 'false'; }
+
+  /* ---- menu --------------------------------------------------------------- */
+
   function renderMenu() {
-    $('levels').innerHTML = PCP.LEVELS.map(function (lv) {
+    q('levels').innerHTML = PCP.LEVELS.map(function (lv) {
       var on = cfg.enabled.indexOf(lv.n) >= 0;
       return '<div class="row" data-level="' + lv.n + '" data-on="' + on + '">' +
-        '<span class="n">' + lv.n + '</span><span>' + lv.name + '</span>' +
-        '<span class="state">' + (on ? 'ON' : 'OFF') + '</span></div>';
+        '<span class="n">' + lv.n + '</span><span class="name">' + lv.name + '</span>' +
+        '<span class="state" data-on="' + on + '"></span></div>';
     }).join('');
 
-    $('durations').innerHTML = DURATIONS.map(function (d) {
+    q('durations').innerHTML = DURATIONS.map(function (d) {
       return '<span class="choice" data-duration="' + d + '" data-on="' +
         (cfg.duration === d) + '">' + d + '</span>';
     }).join('');
 
-    $('submits').innerHTML = [['AUTO', false], ['ENTER', true]].map(function (s) {
+    q('submits').innerHTML = [['auto', false], ['enter', true]].map(function (s) {
       return '<span class="choice" data-enter="' + s[1] + '" data-on="' +
         (cfg.enter === s[1]) + '">' + s[0] + '</span>';
     }).join('');
 
-    $('startHint').dataset.ready = cfg.enabled.length > 0;
+    q('skins').innerHTML = PCP.skins().map(function (s) {
+      return '<span class="choice" data-skinid="' + s.id + '" data-on="' +
+        (skin && skin.id === s.id) + '">' + s.name + '</span>';
+    }).join('');
+
+    q('menu-hint').textContent = '1–7 toggle · ⏎ start · h history';
+    q('menu-hint').dataset.ready = cfg.enabled.length > 0;
   }
 
   function toggleLevel(n) {
     var i = cfg.enabled.indexOf(n);
     if (i >= 0) cfg.enabled.splice(i, 1); else cfg.enabled.push(n);
     cfg.enabled.sort(function (a, b) { return a - b; });
-    save();
+    saveCfg();
     renderMenu();
   }
 
-  $('levels').addEventListener('click', function (e) {
+  screenOf('menu').addEventListener('click', function (e) {
     var row = e.target.closest('[data-level]');
-    if (row) toggleLevel(Number(row.dataset.level));
-  });
-  $('durations').addEventListener('click', function (e) {
-    var c = e.target.closest('[data-duration]');
-    if (c) { cfg.duration = Number(c.dataset.duration); save(); renderMenu(); }
-  });
-  $('submits').addEventListener('click', function (e) {
-    var c = e.target.closest('[data-enter]');
-    if (c) { cfg.enter = c.dataset.enter === 'true'; save(); renderMenu(); }
-  });
-  $('startHint').addEventListener('click', function () { start(); });
+    if (row) return toggleLevel(Number(row.dataset.level));
 
-  /* ---- screens ----------------------------------------------------------- */
+    var d = e.target.closest('[data-duration]');
+    if (d) { cfg.duration = Number(d.dataset.duration); saveCfg(); return renderMenu(); }
+
+    var s = e.target.closest('[data-enter]');
+    if (s) { cfg.enter = s.dataset.enter === 'true'; saveCfg(); return renderMenu(); }
+
+    var k = e.target.closest('[data-skinid]');
+    if (k) { skin = PCP.applySkin(k.dataset.skinid); return renderMenu(); }
+
+    if (e.target.closest('[data-pcp="menu-hint"]')) start();
+  });
+
+  /* ---- screens ------------------------------------------------------------ */
 
   function show(name) {
-    ['menu', 'game', 'results', 'history'].forEach(function (s) { $(s).hidden = s !== name; });
+    ['menu', 'game', 'results', 'history'].forEach(function (s) {
+      screenOf(s).hidden = s !== name;
+    });
     if (name === 'menu') renderMenu();
     if (name === 'history') renderHistory();
-    if (name === 'game') $('answer').focus();
+    if (name === 'game') q('answer').focus();
   }
 
-  /* Re-trigger a stepped animation that may already be on the element. */
-  function replay(el, apply) {
-    apply(el, false);
+  /* Re-trigger a CSS animation that may already be on the element. */
+  function replay(el, cls) {
+    el.classList.remove(cls);
     void el.offsetWidth;
-    apply(el, true);
+    el.classList.add(cls);
   }
 
-  /* ---- game -------------------------------------------------------------- */
+  /* ---- game --------------------------------------------------------------- */
 
   function start() {
     if (!cfg.enabled.length) return;
     game = {
-      solved: 0, streak: 0, best: 0,
-      stats: {}, misses: [],
+      solved: 0, streak: 0, best: 0, stats: {}, misses: [],
       endsAt: performance.now() + cfg.duration * 1000,
       problem: null, tStart: 0, fumbled: false
     };
-
-    $('timebar').innerHTML = new Array(TIME_CELLS + 1).join('<i></i>');
-    $('streak').innerHTML = new Array(STREAK_PIPS + 1).join('<i></i>');
-    $('best').textContent = '0';
+    q('timebar').innerHTML = new Array(TIME_CELLS + 1).join('<i></i>');
+    q('streak').innerHTML = new Array(STREAK_PIPS + 1).join('<i></i>');
+    q('best').textContent = '0';
     paintScore();
     paintStreak();
-
     show('game');
     next();
     tick();
@@ -169,43 +178,33 @@
     game.problem = PCP.generate(pool[Math.floor(Math.random() * pool.length)]);
     game.tStart = performance.now();
     game.fumbled = false;
-    $('answer').value = '';
-    $('typed').textContent = '';
+    q('answer').value = '';
+    q('typed').textContent = '';
     renderProblem();
   }
 
   function renderProblem() {
     var p = game.problem;
-
-    $('givens').innerHTML = p.givens.map(function (g) {
+    q('givens').innerHTML = p.givens.map(function (g) {
       return '<span class="given"><span class="sym">' + g.sym +
         '</span><span class="val">' + g.text + '</span></span>';
     }).join('');
+    q('solve-label').textContent = p.label;
 
-    $('solveLabel').textContent = p.label.toUpperCase();
+    var trades = q('trades');
+    trades.dataset.empty = p.binary ? 'false' : 'true';
+    trades.innerHTML = p.binary
+      ? '<div><span class="key">J</span>' + p.binary.j + '</div>' +
+        '<div><span class="key">K</span>' + p.binary.k + '</div>'
+      : '<div>&nbsp;</div><div>&nbsp;</div>';
 
-    var trades = $('trades');
-    if (p.binary) {
-      trades.dataset.empty = 'false';
-      trades.innerHTML =
-        '<div><span class="key">J</span>' + p.binary.j + '</div>' +
-        '<div><span class="key">K</span>' + p.binary.k + '</div>';
-    } else {
-      trades.dataset.empty = 'true';
-      trades.innerHTML = '<div>&nbsp;</div><div>&nbsp;</div>';
-    }
-
-    replay($('stage'), function (el, on) {
-      if (on) el.dataset.fresh = 'true'; else el.removeAttribute('data-fresh');
-    });
+    replay(q('stage'), 'fresh');
   }
 
-  function paintScore() {
-    $('score').textContent = String(game.solved).padStart(4, '0');
-  }
+  function paintScore() { q('score').textContent = padScore(game.solved); }
 
   function paintStreak() {
-    var pips = $('streak').children;
+    var pips = q('streak').children;
     for (var i = 0; i < pips.length; i++) {
       if (i < Math.min(game.streak, STREAK_PIPS)) pips[i].dataset.on = 'true';
       else pips[i].removeAttribute('data-on');
@@ -238,11 +237,11 @@
     game.streak++;
     if (game.streak > game.best) {
       game.best = game.streak;
-      $('best').textContent = game.best;
+      q('best').textContent = game.best;
     }
     paintScore();
     paintStreak();
-    replay($('score'), function (el, on) { el.classList.toggle('hit', on); });
+    replay(q('score'), 'hit');
     next();
   }
 
@@ -252,9 +251,8 @@
     game.fumbled = true;
     statFor(game.problem.level).missed++;
     game.misses.push(describe(game.problem));
-
     game.streak = 0;
-    var pips = $('streak');
+    var pips = q('streak');
     pips.dataset.broke = 'true';
     setTimeout(function () { pips.removeAttribute('data-broke'); paintStreak(); }, 340);
   }
@@ -262,30 +260,27 @@
   function tryAnswer() {
     var p = game.problem;
     if (!p || p.binary) return;                    // shape B answers with J/K
-    var v = parseCents($('answer').value);
+    var v = parseCents(q('answer').value);
     if (v !== null && v === p.answer) advance();
   }
 
   function tryTrade(key) {
     var p = game.problem;
     if (!p || !p.binary) return;
+    var v = parseCents(q('answer').value);
+    if (v === null) return;          // no magnitude yet, so not yet an attempt
 
-    var v = parseCents($('answer').value);
-    if (v === null) return;            // no magnitude yet, so not yet an attempt
+    if (v === p.answer && key === p.binary.correct) return advance();
 
-    if (v === p.answer && key === p.binary.correct) {
-      advance();
-      return;
-    }
     // Wrong. Hold the problem rather than moving on, so that advancing means
     // the same thing here as on the typed levels: you got it right.
     fumble();
   }
 
-  $('answer').addEventListener('input', function () {
+  q('answer').addEventListener('input', function () {
     var cleaned = this.value.replace(/[^0-9.]/g, '');
     if (cleaned !== this.value) this.value = cleaned;
-    $('typed').textContent = cleaned;
+    q('typed').textContent = cleaned;
     if (!cfg.enter) tryAnswer();
   });
 
@@ -295,15 +290,14 @@
 
     var secs = Math.ceil(left / 1000);
     var text = Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0');
-    if ($('clock').textContent !== text) $('clock').textContent = text;
+    if (q('clock').textContent !== text) q('clock').textContent = text;
 
     var lit = Math.ceil(frac * TIME_CELLS);
-    var cells = $('timebar').children;
+    var cells = q('timebar').children;
     for (var i = 0; i < cells.length; i++) {
-      if (i < lit) cells[i].dataset.on = 'true';
-      else cells[i].removeAttribute('data-on');
+      if (i < lit) cells[i].dataset.on = 'true'; else cells[i].removeAttribute('data-on');
     }
-    $('timebar').dataset.low = frac <= 0.2;
+    q('timebar').dataset.low = frac <= 0.2;
 
     if (left <= 0) finish();
   }
@@ -316,12 +310,8 @@
     var priorBest = bestFor(loadHistory(), configKey(cfg.duration, cfg.enabled));
 
     var rec = {
-      t: Date.now(),
-      score: game.solved,
-      dur: cfg.duration,
-      levels: cfg.enabled.slice(),
-      streak: game.best,
-      stats: {}
+      t: Date.now(), score: game.solved, dur: cfg.duration,
+      levels: cfg.enabled.slice(), streak: game.best, stats: {}
     };
     Object.keys(game.stats).forEach(function (k) {
       var st = game.stats[k];
@@ -333,7 +323,7 @@
     show('results');
   }
 
-  /* ---- results ----------------------------------------------------------- */
+  /* ---- results ------------------------------------------------------------ */
 
   function renderResults(priorBest) {
     var attempts = 0, missed = 0;
@@ -342,53 +332,60 @@
       missed += game.stats[k].missed;
     });
     var acc = attempts ? Math.round((attempts - missed) / attempts * 100) : 100;
+    var isNew = game.solved > priorBest;
 
-    $('finals').innerHTML = [
-      ['SCORE', String(game.solved).padStart(4, '0')],
-      ['RATE', (game.solved / (cfg.duration / 60)).toFixed(1) + '/min'],
-      ['BEST STREAK', String(game.best).padStart(2, '0')],
-      ['ACCURACY', acc + '%'],
-      [game.solved > priorBest ? 'NEW BEST' : 'BEST', game.solved > priorBest
-        ? String(game.solved).padStart(4, '0') : String(priorBest).padStart(4, '0')]
+    q('total').textContent = padScore(game.solved);
+    q('rate').textContent = (game.solved / (cfg.duration / 60)).toFixed(1) + ' / min';
+
+    var pb = q('pb');
+    pb.textContent = isNew ? 'new best' : (priorBest ? 'best ' + priorBest : '');
+    if (isNew) pb.dataset.new = 'true'; else pb.removeAttribute('data-new');
+
+    q('finals').innerHTML = [
+      ['score', padScore(game.solved)],
+      ['rate', (game.solved / (cfg.duration / 60)).toFixed(1) + '/min'],
+      ['best streak', String(game.best)],
+      ['accuracy', acc + '%'],
+      [isNew ? 'new best' : 'best', padScore(isNew ? game.solved : priorBest)]
     ].map(function (f) {
-      return '<span class="final">' + f[0] + '<b>' + f[1] + '</b></span>';
+      return '<span class="final"><span class="k">' + f[0] + '</span><b>' + f[1] + '</b></span>';
     }).join('');
 
     var rows = PCP.LEVELS.filter(function (lv) { return game.stats[lv.n]; })
       .map(function (lv) {
         var st = game.stats[lv.n];
         var n = st.solved + st.missed;
-        var avg = n ? (st.ms / n / 1000).toFixed(1) + 's' : '—';
         return '<div class="bd"><span class="n">' + lv.n + '</span>' +
-          '<span>' + lv.name + '</span>' +
+          '<span class="name">' + lv.name + '</span>' +
           '<span class="v">' + st.solved + '</span>' +
-          '<span class="v">' + avg + '</span>' +
-          '<span class="missed">' + (st.missed ? st.missed + ' MISSED' : '') +
-          '</span></div>';
+          '<span class="v">' + (n ? (st.ms / n / 1000).toFixed(1) + 's' : '—') + '</span>' +
+          '<span class="missed">' + (st.missed ? st.missed + ' missed' : '') + '</span></div>';
       });
-    $('breakdown').innerHTML = rows.join('') || '<div class="empty">NOTHING SOLVED</div>';
+    q('breakdown').innerHTML = rows.join('') || '<div class="empty">nothing solved</div>';
 
-    $('misses').innerHTML = game.misses.length
-      ? '<div class="cap">MISSED</div>' + game.misses.map(function (m) {
+    q('misses').innerHTML = game.misses.length
+      ? '<div class="cap" data-show="true">missed</div>' + game.misses.map(function (m) {
           return '<div class="miss">' + m.given + ' &nbsp;&rarr;&nbsp; <span class="was">' +
             m.answer + (m.trade ? ' · ' + m.trade : '') + '</span></div>';
         }).join('')
       : '';
+
+    q('results-hint').textContent = '⏎ again · esc settings · h history';
   }
 
-  /* ---- history screen ------------------------------------------------------ */
+  /* ---- history ------------------------------------------------------------ */
 
   function renderHistory() {
     var h = loadHistory();
+    q('hist-total').textContent = h.length;
+    q('hist-label').textContent = h.length === 1 ? 'run' : 'runs';
 
-    var bestScore = h.reduce(function (b, r) { return r.score > b ? r.score : b; }, 0);
-    var bestStreak = h.reduce(function (b, r) { return (r.streak || 0) > b ? r.streak : b; }, 0);
-    $('histFinals').innerHTML = [
-      ['RUNS', String(h.length).padStart(2, '0')],
-      ['BEST SCORE', String(bestScore).padStart(4, '0')],
-      ['BEST STREAK', String(bestStreak).padStart(2, '0')]
+    q('hist-finals').innerHTML = [
+      ['runs', String(h.length)],
+      ['best score', String(h.reduce(function (b, r) { return r.score > b ? r.score : b; }, 0))],
+      ['best streak', String(h.reduce(function (b, r) { return (r.streak || 0) > b ? r.streak : b; }, 0))]
     ].map(function (f) {
-      return '<span class="final">' + f[0] + '<b>' + f[1] + '</b></span>';
+      return '<span class="final"><span class="k">' + f[0] + '</span><b>' + f[1] + '</b></span>';
     }).join('');
 
     // Best is per configuration, so a 30s run never outranks a 300s one.
@@ -399,8 +396,8 @@
     });
 
     var recent = h.slice().reverse().slice(0, 12);
-    $('runsCap').textContent = recent.length ? 'RECENT' : '';
-    $('runs').innerHTML = recent.length
+    setCap('runs-cap', recent.length);
+    q('runs').innerHTML = recent.length
       ? recent.map(function (r) {
           var s = stamp(r.t);
           var isBest = r.score > 0 && r.score === best[configKey(r.dur, r.levels)];
@@ -409,41 +406,41 @@
             '<span>' + r.dur + 's</span>' +
             '<span class="score">' + r.score + '</span>' +
             '<span class="rate">' + rateOf(r) + '/min</span>' +
-            '<span class="flag">' + (isBest ? 'BEST' : '') + '</span></div>';
+            '<span class="flag">' + (isBest ? 'best' : '') + '</span></div>';
         }).join('')
-      : '<div class="empty">NO RUNS YET</div>';
+      : '<div class="empty">no runs yet</div>';
 
-    // Lifetime per-level timing, pooled across every run.
     var agg = {};
     h.forEach(function (r) {
       Object.keys(r.stats || {}).forEach(function (k) {
-        var a2 = agg[k] || (agg[k] = { n: 0, ms: 0 });
-        a2.n += r.stats[k].s + r.stats[k].m;
-        a2.ms += r.stats[k].ms;
+        var a = agg[k] || (agg[k] = { n: 0, ms: 0 });
+        a.n += r.stats[k].s + r.stats[k].m;
+        a.ms += r.stats[k].ms;
       });
     });
     var rows = PCP.LEVELS.filter(function (lv) { return agg[lv.n] && agg[lv.n].n; })
       .map(function (lv) {
-        var a2 = agg[lv.n];
+        var a = agg[lv.n];
         return '<div class="lt"><span class="n">' + lv.n + '</span>' +
-          '<span>' + lv.name + '</span>' +
-          '<span class="v">' + a2.n + '</span>' +
-          '<span class="v">' + (a2.ms / a2.n / 1000).toFixed(1) + 's</span></div>';
+          '<span class="name">' + lv.name + '</span>' +
+          '<span class="v">' + a.n + '</span>' +
+          '<span class="v">' + (a.ms / a.n / 1000).toFixed(1) + 's</span></div>';
       });
-    $('ltCap').textContent = rows.length ? 'BY LEVEL · ATTEMPTS · AVG' : '';
-    $('lifetime').innerHTML = rows.join('');
+    setCap('lifetime-cap', rows.length);
+    q('lifetime').innerHTML = rows.join('');
+    q('history-hint').textContent = 'esc back';
   }
 
-  $('history').addEventListener('click', function (e) {
-    if (e.target.closest('.start')) show('menu');
+  screenOf('history').addEventListener('click', function (e) {
+    if (e.target.closest('[data-pcp="history-hint"]')) show('menu');
   });
 
-  /* ---- keyboard ----------------------------------------------------------- */
+  /* ---- keyboard ------------------------------------------------------------ */
 
   document.addEventListener('keydown', function (e) {
-    var on = !$('menu').hidden ? 'menu'
-           : !$('game').hidden ? 'game'
-           : !$('history').hidden ? 'history'
+    var on = !screenOf('menu').hidden ? 'menu'
+           : !screenOf('game').hidden ? 'game'
+           : !screenOf('history').hidden ? 'history'
            : 'results';
 
     if (on === 'menu') {
@@ -463,7 +460,7 @@
         clearInterval(ticker); ticker = null; show('menu'); e.preventDefault();
       } else if (e.key === 'Enter') {
         if (game.problem && !game.problem.binary) {
-          var v = parseCents($('answer').value);
+          var v = parseCents(q('answer').value);
           if (v !== null && v === game.problem.answer) advance();
         }
         e.preventDefault();
@@ -481,8 +478,8 @@
 
   /* Keep the caret where the typing goes, even after a stray click. */
   document.addEventListener('mousedown', function (e) {
-    if ($('game').hidden) return;
-    if (e.target !== $('answer')) { e.preventDefault(); $('answer').focus(); }
+    if (screenOf('game').hidden) return;
+    if (e.target !== q('answer')) { e.preventDefault(); q('answer').focus(); }
   });
 
   show('menu');

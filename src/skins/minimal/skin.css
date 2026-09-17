@@ -1,0 +1,145 @@
+/* minimal — the quiet one. Two text colours, no chrome, no motion.
+   Built to be read at speed rather than looked at. */
+
+:root {
+  --bg:   #0A0A0A;
+  --fg:   #EDEDED;
+  --dim:  #707070;
+  --sans: 'Geist', ui-sans-serif, system-ui, sans-serif;
+  --mono: 'Geist Mono', ui-monospace, SFMono-Regular, monospace;
+  --pixel:'Geist Pixel', ui-monospace, monospace;
+}
+
+/* The brief for this skin is no animation. Enforce it rather than rely on care. */
+#app, #app * { transition: none !important; animation: none !important; }
+
+body { background: var(--bg); color: var(--fg); font-family: var(--mono); }
+
+[data-pcp="overlay"],
+[data-pcp="brand-small"], [data-pcp="timebar"],
+[data-pcp="streak-wrap"], [data-pcp="best-wrap"],
+[data-pcp="banner"], [data-pcp="hist-banner"],
+[data-pcp="finals"], [data-pcp="hist-finals"],
+[data-pcp="typed"], [data-pcp="label-score"] { display: none; }
+
+[data-screen] { width: 100%; max-width: 620px; margin: 0 auto; }
+[data-screen="menu"] { max-width: 380px; }
+[data-screen="results"], [data-screen="history"] { width: max-content; max-width: min(640px, 100%); }
+
+/* ---- menu --------------------------------------------------------------- */
+
+[data-pcp="brand"] {
+  font-family: var(--pixel); font-size: 30px; line-height: 1;
+  color: var(--fg); margin-bottom: 42px;
+}
+[data-pcp="brand"]::before { content: "put · call parity"; }
+
+[data-pcp="levels"] { margin-bottom: 36px; }
+.row {
+  display: grid; grid-template-columns: 2em 1fr auto;
+  align-items: baseline; gap: 1em;
+  font-size: 13px; line-height: 2.3; color: var(--dim);
+  cursor: pointer; user-select: none;
+}
+.row[data-on='true'] { color: var(--fg); }
+.row .n { color: var(--dim); }
+.row .state[data-on='true']::before  { content: "on"; }
+.row .state[data-on='false']::before { content: "off"; }
+
+.opt {
+  display: grid; grid-template-columns: 8em 1fr; align-items: baseline;
+  font-size: 13px; line-height: 2.3; color: var(--dim);
+}
+.opt .choices { display: flex; gap: 1.4em; }
+.opt .choice { cursor: pointer; user-select: none; }
+.opt .choice[data-on='true'] { color: var(--fg); }
+[data-pcp="label-time"]::before   { content: "duration"; }
+[data-pcp="label-submit"]::before { content: "submit"; }
+[data-pcp="label-skin"]::before   { content: "skin"; }
+
+.hint { margin-top: 40px; font-size: 12px; color: var(--dim); cursor: pointer; }
+.hint[data-ready='true'] { color: var(--fg); }
+
+/* ---- game --------------------------------------------------------------- */
+
+/* Unwrap the HUDs so the clock and score can sit in the corner instead. */
+[data-pcp="hud-top"], [data-pcp="hud-bottom"] { display: contents; }
+[data-pcp="clock"], [data-pcp="score-wrap"] {
+  position: fixed; bottom: 22px; font-family: var(--mono); font-size: 12px;
+}
+[data-pcp="clock"] { right: 88px; color: var(--dim); }
+[data-pcp="score-wrap"] { right: 24px; color: var(--fg); }
+
+.givens {
+  display: flex; flex-wrap: wrap; gap: .4em 1.5em;
+  font-size: 20px; line-height: 1.4; margin-bottom: 34px;
+  font-family: var(--sans);
+}
+.given .sym { color: var(--dim); margin-right: .45em; }
+.given .val { font-weight: 500; }
+
+.solve { position: relative; display: flex; align-items: baseline;
+         font-family: var(--sans); font-size: 40px; font-weight: 300; line-height: 1.1; }
+/* Fixed column so the caret sits at the same x on every problem. */
+.solve .label { min-width: 2.9em; color: var(--fg); }
+[data-pcp="answer"] { width: 6ch; color: var(--fg); caret-color: var(--fg); }
+
+.trades {
+  margin-top: 34px; min-height: 3.4em;
+  font-family: var(--sans); font-size: 15px; line-height: 1.7; color: var(--dim);
+}
+.trades[data-empty='true'] { visibility: hidden; }
+.trades .key {
+  color: var(--fg); font-family: var(--mono); font-size: 13px;
+  display: inline-block; min-width: 1.7em;
+}
+
+/* ---- results & history --------------------------------------------------- */
+
+.headline { display: flex; align-items: baseline; gap: 2.4em; margin-bottom: 40px; }
+.headline .total { font-family: var(--sans); font-size: 40px; font-weight: 300; }
+.headline .rate, .headline .pb { font-size: 12px; color: var(--dim); }
+.headline .pb[data-new='true'] { color: var(--fg); }
+
+.breakdown {
+  display: grid; grid-template-columns: 2em max-content 3.5em 4em 6em;
+  align-items: baseline; column-gap: 1em;
+  font-size: 15px; line-height: 2.1; margin-bottom: 36px; font-family: var(--sans);
+}
+.bd { display: contents; }
+.bd .n, .bd .v, .bd .missed { font-family: var(--mono); font-size: 12px; }
+.bd .n { color: var(--dim); }
+.bd .v { text-align: right; }
+.bd .missed { text-align: right; color: var(--dim); }
+.empty { grid-column: 1 / -1; color: var(--dim); font-family: var(--mono);
+         font-size: 13px; white-space: nowrap; }
+
+.cap { font-family: var(--mono); font-size: 12px; color: var(--dim); margin-bottom: 12px; }
+[data-pcp="runs-cap"]::before     { content: "recent"; }
+[data-pcp="lifetime-cap"]::before { content: "by level · attempts · avg"; }
+
+.misses { margin-bottom: 36px; }
+.miss { font-family: var(--sans); font-size: 14px; line-height: 1.9; color: var(--dim); }
+.miss .was { color: var(--fg); }
+
+.runs {
+  display: grid; grid-template-columns: 4.4em 3.6em 3.2em 2.8em 5em 3em;
+  align-items: baseline; column-gap: 1.1em;
+  font-family: var(--mono); font-size: 13px; line-height: 2.1; margin-bottom: 34px;
+}
+.run { display: contents; }
+.run span { color: var(--dim); }
+.run .score { color: var(--fg); text-align: right; }
+.run .rate { text-align: right; }
+.run .flag { color: var(--fg); }
+.run[data-best='true'] span { color: var(--fg); }
+
+.lifetime {
+  display: grid; grid-template-columns: 2em max-content 3.4em 4em;
+  align-items: baseline; column-gap: 1.1em;
+  font-size: 15px; line-height: 2.1; margin-bottom: 36px; font-family: var(--sans);
+}
+.lt { display: contents; }
+.lt .n, .lt .v { font-family: var(--mono); font-size: 12px; }
+.lt .n { color: var(--dim); }
+.lt .v { text-align: right; }

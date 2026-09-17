@@ -4,63 +4,84 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Paritymac</title>
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="base.css">
+<link rel="stylesheet" href="" id="skin-css">
 </head>
 <body>
 
-<section class="screen" id="settings">
-  <div class="title">put · call parity</div>
-  <div class="levels" id="levels"></div>
-  <div class="opt">
-    <span>duration</span>
-    <span class="choices" id="durations"></span>
-  </div>
-  <div class="opt">
-    <span>submit</span>
-    <span class="choices" id="submits"></span>
-  </div>
-  <div class="hint" id="startHint">1–7 toggle &nbsp;·&nbsp; ⏎ start &nbsp;·&nbsp; h history</div>
-</section>
+<!-- Every skin renders into this one structure. A skin never adds or removes
+     nodes; it styles what it wants and hides the rest. See AGENTS.md. -->
+<div id="app">
 
-<section class="screen" id="game" hidden>
-  <div class="givens" id="givens"></div>
-  <div class="solve">
-    <span class="label" id="solveLabel"></span>
-    <input id="answer" type="text" inputmode="decimal" autocomplete="off"
-           autocorrect="off" autocapitalize="off" spellcheck="false">
-  </div>
-  <div class="trades" id="trades" data-empty="true"></div>
-</section>
+  <div data-pcp="overlay"></div>
 
-<section class="screen" id="results" hidden>
-  <div class="headline">
-    <span class="total" id="total">0</span>
-    <span class="rate" id="rate"></span>
-    <span class="pb" id="pb"></span>
-  </div>
-  <div class="breakdown" id="breakdown"></div>
-  <div class="misses" id="misses"></div>
-  <div class="hint" data-ready="true">⏎ again &nbsp;·&nbsp; esc settings &nbsp;·&nbsp; h history</div>
-</section>
+  <section data-screen="menu">
+    <div data-pcp="brand"></div>
+    <div data-pcp="levels"></div>
+    <div class="opt"><span class="k" data-pcp="label-time"></span><span class="choices" data-pcp="durations"></span></div>
+    <div class="opt"><span class="k" data-pcp="label-submit"></span><span class="choices" data-pcp="submits"></span></div>
+    <div class="opt"><span class="k" data-pcp="label-skin"></span><span class="choices" data-pcp="skins"></span></div>
+    <div class="hint" data-pcp="menu-hint"></div>
+  </section>
 
-<section class="screen" id="history" hidden>
-  <div class="headline">
-    <span class="total" id="histTotal">0</span>
-    <span class="rate" id="histCount"></span>
-  </div>
-  <div class="cap" id="runsCap"></div>
-  <div class="runs" id="runs"></div>
-  <div class="cap" id="ltCap"></div>
-  <div class="lifetime" id="lifetime"></div>
-  <div class="hint" data-ready="true">esc back</div>
-</section>
+  <section data-screen="game" hidden>
+    <div class="hud" data-pcp="hud-top">
+      <span data-pcp="brand-small"></span>
+      <span class="bar" data-pcp="timebar"></span>
+      <span class="clock" data-pcp="clock"></span>
+    </div>
 
-<div class="meta" id="meta" hidden>
-  <span id="clock">0:00</span>
-  <span class="score" id="score">0</span>
+    <div class="stage" data-pcp="stage">
+      <div class="givens" data-pcp="givens"></div>
+      <div class="solve">
+        <span class="label" data-pcp="solve-label"></span>
+        <span class="field"><span class="typed" data-pcp="typed"></span><span class="caret" data-pcp="caret"></span></span>
+        <input data-pcp="answer" type="text" inputmode="decimal" autocomplete="off"
+               autocorrect="off" autocapitalize="off" spellcheck="false">
+      </div>
+      <div class="trades" data-pcp="trades" data-empty="true"></div>
+    </div>
+
+    <div class="hud" data-pcp="hud-bottom">
+      <span class="stat" data-pcp="score-wrap"><span class="k" data-pcp="label-score"></span><b data-pcp="score"></b></span>
+      <span class="stat" data-pcp="streak-wrap"><span class="k" data-pcp="label-streak"></span><span class="pips" data-pcp="streak"></span></span>
+      <span class="stat" data-pcp="best-wrap"><span class="k" data-pcp="label-best"></span><b data-pcp="best"></b></span>
+    </div>
+  </section>
+
+  <section data-screen="results" hidden>
+    <div data-pcp="banner"></div>
+    <div class="headline">
+      <span class="total" data-pcp="total"></span>
+      <span class="rate" data-pcp="rate"></span>
+      <span class="pb" data-pcp="pb"></span>
+    </div>
+    <div class="finals" data-pcp="finals"></div>
+    <div class="breakdown" data-pcp="breakdown"></div>
+    <div class="misses" data-pcp="misses"></div>
+    <div class="hint" data-pcp="results-hint"></div>
+  </section>
+
+  <section data-screen="history" hidden>
+    <div data-pcp="hist-banner"></div>
+    <div class="headline">
+      <span class="total" data-pcp="hist-total"></span>
+      <span class="rate" data-pcp="hist-label"></span>
+    </div>
+    <div class="finals" data-pcp="hist-finals"></div>
+    <div class="cap" data-pcp="runs-cap"></div>
+    <div class="runs" data-pcp="runs"></div>
+    <div class="cap" data-pcp="lifetime-cap"></div>
+    <div class="lifetime" data-pcp="lifetime"></div>
+    <div class="hint" data-pcp="history-hint"></div>
+  </section>
+
 </div>
 
 <script src="levels.js"></script>
-<script src="app.js"></script>
+<script src="skins.js"></script>
+<script src="skins/minimal/skin.js"></script>
+<script src="skins/arcade/skin.js"></script>
+<script src="engine.js"></script>
 </body>
 </html>
