@@ -35,7 +35,12 @@ cp "$ROOT/src/index.html" "$ROOT/src/base.css" \
    "$ROOT/src/engine.js" "$ROOT/src/history.js" \
    "$ROOT/src/skins.js" "$ROOT/src/levels.js" "$WEB/"
 cp -R "$ROOT/src/skins" "$WEB/skins"
-cp -R "$ROOT/src/fonts" "$WEB/fonts"
+# Only the woff2 faces are loaded by the page. GeistPixel.ttf is build-time
+# only (make-icon.swift reads it from the repo), so shipping it would add
+# ~800KB to the bundle for nothing. OFL.txt travels with the fonts because
+# the licence requires it.
+mkdir -p "$WEB/fonts"
+cp "$ROOT/src/fonts/"*.woff2 "$ROOT/src/fonts/OFL.txt" "$WEB/fonts/"
 
 echo "==> rendering icon"
 swift "$ROOT/scripts/make-icon.swift" "$STAGE/AppIcon.iconset" \

@@ -35,6 +35,10 @@ Break these and the drill is wrong, not just ugly.
    `levels.js` builds every problem in cents so answers land exactly on the
    0.05 grid; `parseCents` converts typed input the same way. Float money
    reintroduces rounding drift that silently marks correct answers wrong.
+   `parseCents` also *rejects* sub-cent input rather than rounding it: with
+   plain rounding, typing `2.996` was graded correct for `3.00`. It checks the
+   value against the cent grid rather than counting decimals, so a redundant
+   `3.000` still passes.
 
 2. **Advancing means you were right.** On typed levels a wrong answer simply
    does not advance. On J/K levels a wrong key *holds the problem* and records
@@ -42,7 +46,13 @@ Break these and the drill is wrong, not just ugly.
    contradictory feedback and the keypress would read as "accepts anything".
 
 3. **A fumble counts once per problem.** Retrying must not inflate the miss
-   count. Guarded by `game.fumbled`.
+   count. Guarded by `game.fumbled`. Only J/K levels record fumbles; a wrong
+   typed answer is not a discrete attempt.
+
+   Saved history is untrusted input — it can be hand-edited or predate a
+   schema change. `loadHistory` drops non-records and the readers coerce
+   missing fields, because one bad entry throwing inside `finish()` loses the
+   run that was just played.
 
 4. **Reserve layout space that comes and goes.** The J/K trade rows are
    present on every problem and hidden with `visibility`, never `display`, so
@@ -68,6 +78,8 @@ removes DOM.
    Optional: `scorePad: 4` renders the score as `0012`.
 
 3. `src/skins/myskin/skin.css` — start by copying `skins/minimal/skin.css`.
+   `base.css` sets a dark fallback background and colour, so a skin with a CSS
+   syntax error degrades to something readable rather than white-on-white.
 4. Add one `<script src="skins/myskin/skin.js"></script>` to `index.html`,
    next to the others.
 5. Add the same file to the copy list in `scripts/build-app.sh` if you place

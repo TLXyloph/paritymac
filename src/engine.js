@@ -28,7 +28,12 @@
       var raw = JSON.parse(localStorage.getItem(STORE));
       if (!raw) return d;
       if (Array.isArray(raw.enabled)) {
-        d.enabled = raw.enabled.filter(function (n) { return n >= 1 && n <= 7; });
+        // Whole levels only, de-duplicated and sorted: a hand-edited 1.5 would
+        // index past LEVELS, and a repeat would both skew the pool and change
+        // the config key.
+        d.enabled = raw.enabled.filter(function (n, i, a) {
+          return Number.isInteger(n) && n >= 1 && n <= 7 && a.indexOf(n) === i;
+        }).sort(function (a, b) { return a - b; });
       }
       if (DURATIONS.indexOf(raw.duration) >= 0) d.duration = raw.duration;
       d.enter = !!raw.enter;
@@ -43,7 +48,10 @@
   function loadHistory() {
     try {
       var h = JSON.parse(localStorage.getItem(HIST));
-      return Array.isArray(h) ? h : [];
+      if (!Array.isArray(h)) return [];
+      // Drop anything that is not a record, so one bad entry cannot take down
+      // finish() and lose the run that was just played.
+      return h.filter(function (r) { return r && typeof r === 'object'; });
     } catch (e) { return []; }
   }
 
@@ -56,8 +64,13 @@
     } catch (e) { /* storage unavailable: the run simply is not kept */ }
   }
 
-  /* Scores only compare within the same duration and level set. */
-  function configKey(dur, levels) { return dur + ':' + (levels || []).join(','); }
+  /* Scores only compare within the same duration and level set. Sorted, so the
+     key depends on which levels were played and not on the order they were
+     stored in, and tolerant of a record whose levels are not an array. */
+  function configKey(dur, levels) {
+    var ls = Array.isArray(levels) ? levels.slice().sort(function (a, b) { return a - b; }) : [];
+    return dur + ':' + ls.join(',');
+  }
 
   function bestFor(history, key) {
     return history.reduce(function (b, r) {
@@ -65,7 +78,10 @@
     }, 0);
   }
 
-  function rateOf(r) { return (r.score / (r.dur / 60)).toFixed(1); }
+  function rateOf(r) {
+    var dur = Number(r.dur) || 0;                  // a 0-duration record would divide by zero
+    return dur > 0 ? ((Number(r.score) || 0) / (dur / 60)).toFixed(1) : '0.0';
+  }
   function padScore(n) { return skin && skin.scorePad ? String(n).padStart(skin.scorePad, '0') : String(n); }
 
   function stamp(ms) {
@@ -153,6 +169,7 @@
 
   function start() {
     if (!cfg.enabled.length) return;
+    clearInterval(ticker);   // belt and braces: never leak a previous ticker
     game = {
       solved: 0, streak: 0, best: 0, stats: {}, misses: [],
       endsAt: performance.now() + cfg.duration * 1000,
@@ -215,7 +232,15 @@
     s = (s || '').trim();
     if (!s || s === '.' || !/^\d*\.?\d*$/.test(s)) return null;
     var f = parseFloat(s);
-    return isFinite(f) ? Math.round(f * 100) : null;
+    if (!isFinite(f)) return null;
+
+    // Answers are whole cents. Reject anything finer rather than rounding it,
+    // or 2.996 would be graded as 3.00. Checking the grid rather than counting
+    // decimals keeps a redundant 3.000 valid. The tolerance absorbs binary
+    // float error: 0.29 * 100 is 28.999999999999996.
+    var c = f * 100;
+    if (Math.abs(c - Math.round(c)) > 1e-6) return null;
+    return Math.round(c);
   }
 
   function describe(p) {

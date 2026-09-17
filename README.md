@@ -67,6 +67,10 @@ solved / missed / elapsed. The history screen shows recent runs and lifetime
 average time per level. Bests are scoped to duration plus level set, so a short
 round never outranks a long one. Stored locally; nothing leaves the machine.
 
+Misses are recorded only on levels 6 and 7. A wrong typed answer simply does
+not advance, so there is no discrete attempt to count — accuracy therefore
+reflects the direction calls.
+
 ## Skins
 
 A skin is one CSS file and one line of registration:

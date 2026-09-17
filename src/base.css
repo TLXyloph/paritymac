@@ -20,7 +20,12 @@
 *, *::before, *::after { box-sizing: border-box; }
 html, body { height: 100%; }
 
+/* Safe fallback so a skin with a CSS syntax error degrades to something
+   readable instead of white-on-white. A skin overrides both immediately. */
 body {
+  background: #0A0A0A;
+  color: #EDEDED;
+  font-family: ui-monospace, SFMono-Regular, monospace;
   margin: 0;
   display: grid;
   /* "safe" falls back to start alignment when content is taller than the

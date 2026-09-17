@@ -45,7 +45,7 @@
     q('highs').innerHTML = highs.map(function (r, i) {
       return '<div class="high" data-top="' + (i === 0) + '">' +
         '<span class="dur">' + r.dur + 's</span>' +
-        '<span class="lv">' + (r.levels || []).join('') + '</span>' +
+        '<span class="lv">' + (Array.isArray(r.levels) ? r.levels : []).join('') + '</span>' +
         '<span class="score">' + r.score + '</span>' +
         '<span class="rate">' + rateOf(r) + '/min</span>' +
         '<span class="when">' + stamp(r.t).day + '</span></div>';
@@ -68,10 +68,13 @@
 
     var agg = {};
     h.forEach(function (r) {
-      Object.keys(r.stats || {}).forEach(function (k) {
+      var stats = r.stats || {};
+      Object.keys(stats).forEach(function (k) {
+        var st = stats[k];
+        if (!st || typeof st !== 'object') return;   // hand-edited or older record
         var a = agg[k] || (agg[k] = { n: 0, ms: 0 });
-        a.n += r.stats[k].s + r.stats[k].m;
-        a.ms += r.stats[k].ms;
+        a.n += (st.s || 0) + (st.m || 0);
+        a.ms += (st.ms || 0);
       });
     });
     var rows = PCP.LEVELS.filter(function (lv) { return agg[lv.n] && agg[lv.n].n; })
