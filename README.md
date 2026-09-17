@@ -25,8 +25,12 @@ cd paritymac
 
 ## The drill
 
-Parity is `C + K·DF = P + S`. Each problem quotes all but one leg and asks for
-the missing one, rotating which leg is hidden.
+Parity is `C − P = S − PV(K)`. Each problem quotes all but one leg and asks
+for the missing one, rotating which leg is hidden.
+
+Discounting stays out of the way: every level runs at zero rates except level
+4, which uses the simple-interest approximation `K·r·T` rather than a discount
+factor. The drill is about the relation, not about compounding.
 
 | # | level | relation |
 |---|---|---|
@@ -43,8 +47,8 @@ increment. Levels toggle independently; level 1 is off by default, being a
 warm-up.
 
 Levels 6 and 7 want a magnitude and a direction: type the edge, then press the
-key naming the trade. Direction is binary — the sign of `(C−P) − (S−K·DF)`
-determines the trade completely. A wrong key holds the problem, so advancing
+key naming the trade. Direction is binary — both levels quote `r 0`, so the
+sign of `(C−P) − (S−K)` determines the trade completely. A wrong key holds the problem, so advancing
 always means you were right.
 
 ## Keys

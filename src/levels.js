@@ -1,6 +1,9 @@
 /* Put-call parity problem generators.
    All money is integer cents so answers land exactly on the 0.05 grid.
-   Parity: C - P = S - PV(K), forward form C - P = (F - K) * DF. */
+   Parity: C - P = S - PV(K); forward form C - P = (F - K) * DF.
+   Only level 4 discounts, and it does so with the simple-interest
+   approximation K*r*T. Every other level runs at zero rates, so no discount
+   factor is ever shown to the player. */
 (function (root) {
   'use strict';
 
