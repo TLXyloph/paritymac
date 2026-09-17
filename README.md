@@ -10,17 +10,18 @@ Seven levels, two skins. No network, no dependencies, no build step.
 
 ## Install
 
-Needs macOS 12+ and the Xcode command line tools (`xcode-select --install`).
+[**Download the latest .dmg**](https://github.com/TLXyloph/paritymac/releases/latest)
+and drag Paritymac to Applications. On first launch, right-click it and choose
+Open — macOS asks once for apps from unidentified developers.
+
+Or build it, which skips that prompt. Needs macOS 12+ and the Xcode command
+line tools (`xcode-select --install`):
 
 ```bash
 git clone https://github.com/TLXyloph/paritymac
 cd paritymac
-./scripts/build-app.sh            # installs to /Applications
-./scripts/build-app.sh ~/Desktop  # or elsewhere
+./scripts/build-app.sh
 ```
-
-A local build carries no quarantine flag, so it opens immediately. See
-[Distribution](#distribution) for disk images.
 
 ## The drill
 
@@ -78,32 +79,6 @@ PCP.skin({ id: 'myskin', name: 'my skin', css: 'skins/myskin/skin.css' });
 Copy `src/skins/minimal/skin.css`, add a `<script>` line to `src/index.html`,
 and it appears in the menu. Skins style a fixed DOM rather than supplying their
 own markup, so a skin cannot break the drill. Slot contract: [AGENTS.md](AGENTS.md).
-
-## Distribution
-
-```bash
-./scripts/make-dmg.sh             # -> dist/Paritymac-<version>.dmg
-```
-
-A downloaded app carries a quarantine flag, and macOS will refuse to open it
-unless it is **notarised** — signed with a Developer ID certificate and scanned
-by Apple. That requires an Apple Developer Program membership ($99/year). There
-is no free workaround: an ad-hoc build shows *"cannot be opened because Apple
-cannot check it for malicious software"*, and users must right-click → Open, or
-approve it under Privacy & Security.
-
-With a membership, the same script produces a disk image that opens first try:
-
-```bash
-xcrun notarytool store-credentials paritymac \
-  --apple-id you@example.com --team-id TEAMID --password <app-specific-password>
-
-SIGN_ID="Developer ID Application: Your Name (TEAMID)" \
-NOTARY_PROFILE=paritymac ./scripts/make-dmg.sh
-```
-
-That signs with the hardened runtime, submits the image to Apple for malware
-scanning, and staples the ticket so it verifies offline.
 
 ## Development
 

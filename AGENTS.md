@@ -139,6 +139,26 @@ node tests/levels.test.js     # must pass before any commit
 environment. Leave `BUNDLE_ID` alone unless you mean to orphan existing
 settings and run history — it is the key they are stored under.
 
+### Releasing
+
+`make-dmg.sh` produces the image attached to GitHub releases. Unsigned, it
+trips Gatekeeper on a downloader's machine: `spctl -a` returns `rejected` and
+the user has to right-click → Open once. The only fix is notarisation, which
+needs an Apple Developer Program membership. With one, no script changes are
+required:
+
+```bash
+xcrun notarytool store-credentials paritymac \
+  --apple-id you@example.com --team-id TEAMID --password <app-specific-password>
+
+SIGN_ID="Developer ID Application: Your Name (TEAMID)" \
+NOTARY_PROFILE=paritymac ./scripts/make-dmg.sh
+```
+
+That signs with the hardened runtime, submits the image to Apple for malware
+scanning and staples the ticket so it verifies offline. Update the README's
+first-launch sentence once that ships.
+
 There is no linter and no package.json. Plain `<script>` tags, not ES modules —
 that keeps the custom-scheme loading simple.
 
