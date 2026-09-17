@@ -2,8 +2,7 @@
 
 A put–call parity speed drill for macOS, in the spirit of [Zetamac](https://arithmetic.zetamac.com).
 
-Seven levels, from clean-integer warm-ups to arb direction and box spreads.
-Two skins. No network, no dependencies, no build step.
+Seven levels, two skins. No network, no dependencies, no build step.
 
 | `minimal` | `arcade` |
 |---|---|
@@ -11,28 +10,22 @@ Two skins. No network, no dependencies, no build step.
 
 ## Install
 
-Requires macOS 12 or later and the Xcode command line tools
-(`xcode-select --install`).
+Needs macOS 12+ and the Xcode command line tools (`xcode-select --install`).
 
 ```bash
 git clone https://github.com/TLXyloph/paritymac
 cd paritymac
-./scripts/build-app.sh
+./scripts/build-app.sh            # installs to /Applications
+./scripts/build-app.sh ~/Desktop  # or elsewhere
 ```
 
-That compiles the Swift shell, bundles the drill and the fonts, renders the
-icon, ad-hoc signs the bundle and installs `Paritymac.app` to `/Applications`.
-Pass a path to install elsewhere:
-
-```bash
-./scripts/build-app.sh ~/Desktop
-```
+A local build carries no quarantine flag, so it opens immediately. See
+[Distribution](#distribution) for disk images.
 
 ## The drill
 
 Parity is `C + K·DF = P + S`. Each problem quotes all but one leg and asks for
-the missing one, rotating which leg is hidden so position never predicts the
-answer.
+the missing one, rotating which leg is hidden.
 
 | # | level | relation |
 |---|---|---|
@@ -44,69 +37,73 @@ answer.
 | 6 | arb direction | all four legs quoted off parity — name the edge and the trade |
 | 7 | boxes | a `K1/K2` box is worth `K2 − K1` at zero rates — buy it or sell it |
 
-Levels toggle independently; problems are drawn from whatever is enabled.
-Level 1 is off by default, being a warm-up rather than a level.
+Values are generated in integer cents, so answers always land on a clean 0.05
+increment. Levels toggle independently; level 1 is off by default, being a
+warm-up.
 
-Every value is generated in integer cents, so answers always land on a clean
-0.05 increment and no problem depends on a rounding convention.
-
-### Levels 6 and 7
-
-These ask for two things: a magnitude and a direction. Type the edge, then
-press the key naming the trade. The direction is genuinely binary — once you
-know the sign of `(C−P) − (S−K·DF)` the trade is fully determined — so the
-whole answer is a number and one keystroke.
-
-A wrong key holds the problem rather than moving on. Across the whole drill,
-advancing means exactly one thing: you were right.
+Levels 6 and 7 want a magnitude and a direction: type the edge, then press the
+key naming the trade. Direction is binary — the sign of `(C−P) − (S−K·DF)`
+determines the trade completely. A wrong key holds the problem, so advancing
+always means you were right.
 
 ## Keys
 
-| key | |
+| | |
 |---|---|
 | `1`–`7` | toggle levels |
 | `⏎` | start, or run again |
 | `esc` | back |
 | `h` | history |
-| `j` / `k` | name the trade, on levels 6 and 7 |
+| `j` `k` | name the trade, on levels 6 and 7 |
 
-`submit` chooses between advancing the moment your typed answer matches, and
-requiring `⏎`. Auto is faster and is what Zetamac does; `enter` costs a
-keystroke per problem but removes any chance of a partially typed number
-matching early.
+`submit` switches between advancing the moment a typed answer matches and
+requiring `⏎`.
 
 ## History
 
-Every finished run is recorded: score, rate, duration, level set, best streak,
-and per-level solved / missed / elapsed. The history screen shows recent runs
-and your lifetime average time per level, which is the part that tells you
-whether a level is actually getting faster.
-
-Personal bests are scoped to the configuration — duration plus level set — so a
-short round never outranks a long one.
-
-Everything is stored locally in the app's own WebKit store. Nothing leaves the
-machine.
+Each run records score, rate, duration, level set, best streak, and per-level
+solved / missed / elapsed. The history screen shows recent runs and lifetime
+average time per level. Bests are scoped to duration plus level set, so a short
+round never outranks a long one. Stored locally; nothing leaves the machine.
 
 ## Skins
 
-A skin is **one CSS file and one line of registration**. It styles a fixed DOM
-rather than supplying its own, so a new skin cannot break the drill.
+A skin is one CSS file and one line of registration:
 
 ```js
 // src/skins/myskin/skin.js
 PCP.skin({ id: 'myskin', name: 'my skin', css: 'skins/myskin/skin.css' });
 ```
 
-Copy `src/skins/minimal/skin.css` as a starting point, add one `<script>` line
-to `src/index.html`, and it appears in the menu. The full slot contract — every
-element the engine writes into, and what it puts there — is documented in
-[AGENTS.md](AGENTS.md).
+Copy `src/skins/minimal/skin.css`, add a `<script>` line to `src/index.html`,
+and it appears in the menu. Skins style a fixed DOM rather than supplying their
+own markup, so a skin cannot break the drill. Slot contract: [AGENTS.md](AGENTS.md).
 
-The two bundled skins are deliberate opposites. `minimal` is two text colours
-and no motion at all, built to be read rather than looked at. `arcade` is a CRT
-cabinet: scanlines, a draining block timer, a streak meter that shatters when
-you break it, every animation stepped so it never betrays the pixel grid.
+## Distribution
+
+```bash
+./scripts/make-dmg.sh             # -> dist/Paritymac-<version>.dmg
+```
+
+A downloaded app carries a quarantine flag, and macOS will refuse to open it
+unless it is **notarised** — signed with a Developer ID certificate and scanned
+by Apple. That requires an Apple Developer Program membership ($99/year). There
+is no free workaround: an ad-hoc build shows *"cannot be opened because Apple
+cannot check it for malicious software"*, and users must right-click → Open, or
+approve it under Privacy & Security.
+
+With a membership, the same script produces a disk image that opens first try:
+
+```bash
+xcrun notarytool store-credentials paritymac \
+  --apple-id you@example.com --team-id TEAMID --password <app-specific-password>
+
+SIGN_ID="Developer ID Application: Your Name (TEAMID)" \
+NOTARY_PROFILE=paritymac ./scripts/make-dmg.sh
+```
+
+That signs with the hardened runtime, submits the image to Apple for malware
+scanning, and staples the ticket so it verifies offline.
 
 ## Development
 
@@ -114,31 +111,20 @@ you break it, every animation stepped so it never betrays the pixel grid.
 node tests/levels.test.js
 ```
 
-The suite checks each level against its own parity relation across 20,000
-generated problems, plus the seven worked examples, and asserts that answers
-are positive, land on the 0.05 grid, and never quote an option below intrinsic
-value. It needs nothing but `node`.
+Checks every level against its own parity relation across 20,000 generated
+problems each, plus the worked examples, and asserts answers are positive, land
+on the 0.05 grid, and never quote an option below intrinsic value. Needs only
+`node`.
 
-For fast CSS iteration, serve `src/` and open it in a browser:
+For CSS iteration: `cd src && python3 -m http.server 8731`.
 
-```bash
-cd src && python3 -m http.server 8731
-```
-
-The app itself is a `WKWebView` serving the bundle over a custom `pcp://`
-scheme. That is deliberate: `file://` origins are opaque in WKWebView and will
-not persist `localStorage`, which would silently discard settings and history
-on every launch.
-
-[AGENTS.md](AGENTS.md) is the guide for coding agents, and the fastest way for
-a human to understand the architecture too.
+The app is a `WKWebView` serving its bundle over a custom `pcp://` scheme.
+`file://` origins are opaque in WKWebView and will not persist `localStorage`,
+which would discard settings and history on every launch.
 
 ## License
 
-The code is [MIT](LICENSE).
-
-The bundled faces are [Geist](https://vercel.com/font) — Sans, Mono and Pixel —
-by Vercel, under the SIL Open Font License 1.1. That is a separate license
-covering only the font files, not this project's code. The OFL permits
-redistribution but **requires its text to travel with the fonts**, so keep
-[`src/fonts/OFL.txt`](src/fonts/OFL.txt) in place if you fork this.
+Code is [MIT](LICENSE). The bundled [Geist](https://vercel.com/font) faces are
+SIL OFL 1.1 — a separate license covering only the font files, which requires
+its text to travel with them. Keep [`src/fonts/OFL.txt`](src/fonts/OFL.txt) in
+any fork.

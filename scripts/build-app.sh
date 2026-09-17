@@ -63,8 +63,15 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 PLIST
 
 echo "==> signing"
-# Ad-hoc signature: arm64 refuses to launch an unsigned bundle.
-codesign --force --sign - --timestamp=none "$APP" 2>/dev/null
+# Ad-hoc by default: arm64 refuses to launch an unsigned bundle at all.
+# Set SIGN_ID to a "Developer ID Application: ..." identity to produce a build
+# that can be notarised. The hardened runtime is required for notarisation.
+SIGN_ID="${SIGN_ID:--}"
+if [ "$SIGN_ID" = "-" ]; then
+  codesign --force --sign - --timestamp=none "$APP" 2>/dev/null
+else
+  codesign --force --sign "$SIGN_ID" --options runtime --timestamp "$APP"
+fi
 
 echo "==> installing to $DEST"
 if [ -e "$TARGET" ]; then

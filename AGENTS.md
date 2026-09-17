@@ -132,8 +132,12 @@ and land on the 0.05 grid.
 ```bash
 node tests/levels.test.js     # must pass before any commit
 ./scripts/build-app.sh        # build + install to /Applications
-./scripts/build-app.sh ~/Desktop
+./scripts/make-dmg.sh         # drag-to-install image in dist/
 ```
+
+`build-app.sh` reads `APP_NAME`, `BUNDLE_ID` and `SIGN_ID` from the
+environment. Leave `BUNDLE_ID` alone unless you mean to orphan existing
+settings and run history — it is the key they are stored under.
 
 There is no linter and no package.json. Plain `<script>` tags, not ES modules —
 that keeps the custom-scheme loading simple.
