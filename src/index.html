@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paritymac</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<section class="screen" id="settings">
+  <div class="title">put · call parity</div>
+  <div class="levels" id="levels"></div>
+  <div class="opt">
+    <span>duration</span>
+    <span class="choices" id="durations"></span>
+  </div>
+  <div class="opt">
+    <span>submit</span>
+    <span class="choices" id="submits"></span>
+  </div>
+  <div class="hint" id="startHint">1–7 toggle &nbsp;·&nbsp; ⏎ start &nbsp;·&nbsp; h history</div>
+</section>
+
+<section class="screen" id="game" hidden>
+  <div class="givens" id="givens"></div>
+  <div class="solve">
+    <span class="label" id="solveLabel"></span>
+    <input id="answer" type="text" inputmode="decimal" autocomplete="off"
+           autocorrect="off" autocapitalize="off" spellcheck="false">
+  </div>
+  <div class="trades" id="trades" data-empty="true"></div>
+</section>
+
+<section class="screen" id="results" hidden>
+  <div class="headline">
+    <span class="total" id="total">0</span>
+    <span class="rate" id="rate"></span>
+    <span class="pb" id="pb"></span>
+  </div>
+  <div class="breakdown" id="breakdown"></div>
+  <div class="misses" id="misses"></div>
+  <div class="hint" data-ready="true">⏎ again &nbsp;·&nbsp; esc settings &nbsp;·&nbsp; h history</div>
+</section>
+
+<section class="screen" id="history" hidden>
+  <div class="headline">
+    <span class="total" id="histTotal">0</span>
+    <span class="rate" id="histCount"></span>
+  </div>
+  <div class="cap" id="runsCap"></div>
+  <div class="runs" id="runs"></div>
+  <div class="cap" id="ltCap"></div>
+  <div class="lifetime" id="lifetime"></div>
+  <div class="hint" data-ready="true">esc back</div>
+</section>
+
+<div class="meta" id="meta" hidden>
+  <span id="clock">0:00</span>
+  <span class="score" id="score">0</span>
+</div>
+
+<script src="levels.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

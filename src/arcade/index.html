@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paritycade</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="crt" aria-hidden="true"></div>
+
+<main>
+
+<section class="screen" id="menu">
+  <h1 class="wordmark">PARITYCADE</h1>
+  <div class="levels" id="levels"></div>
+  <div class="opt"><span class="k">TIME</span><span class="choices" id="durations"></span></div>
+  <div class="opt"><span class="k">SUBMIT</span><span class="choices" id="submits"></span></div>
+  <div class="start" id="startHint">PRESS <b>&#9166;</b> TO START &nbsp;·&nbsp; <b>H</b> HISTORY</div>
+</section>
+
+<section class="screen" id="game" hidden>
+  <div class="hud">
+    <span class="brand">PARITYCADE</span>
+    <span class="bar" id="timebar"></span>
+    <span class="clock" id="clock">0:00</span>
+  </div>
+
+  <div class="stage" id="stage">
+    <div class="givens" id="givens"></div>
+    <div class="solve">
+      <span class="label" id="solveLabel"></span>
+      <span class="field"><span class="typed" id="typed"></span><span class="caret"></span></span>
+      <input id="answer" type="text" inputmode="decimal" autocomplete="off"
+             autocorrect="off" autocapitalize="off" spellcheck="false">
+    </div>
+    <div class="trades" id="trades" data-empty="true"></div>
+  </div>
+
+  <div class="hud">
+    <span class="stat">SCORE <b id="score">0000</b></span>
+    <span class="stat">STREAK <span class="pips" id="streak"></span></span>
+    <span class="stat">BEST <b id="best">0</b></span>
+  </div>
+</section>
+
+<section class="screen" id="results" hidden>
+  <h2 class="over">TIME UP</h2>
+  <div class="finals" id="finals"></div>
+  <div class="breakdown" id="breakdown"></div>
+  <div class="misses" id="misses"></div>
+  <div class="start">PRESS <b>&#9166;</b> AGAIN &nbsp;·&nbsp; <b>ESC</b> MENU &nbsp;·&nbsp; <b>H</b> HISTORY</div>
+</section>
+
+<section class="screen" id="history" hidden>
+  <h2 class="over">HISTORY</h2>
+  <div class="finals" id="histFinals"></div>
+  <div class="cap" id="runsCap"></div>
+  <div class="runs" id="runs"></div>
+  <div class="cap" id="ltCap"></div>
+  <div class="lifetime" id="lifetime"></div>
+  <div class="start"><b>ESC</b> BACK</div>
+</section>
+
+</main>
+
+<script src="levels.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

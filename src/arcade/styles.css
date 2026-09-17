@@ -1,0 +1,268 @@
+/* Paritycade — the stylised sibling. Same drill, same Geist family,
+   but a CRT cabinet instead of a quiet page. Every animation is stepped:
+   smooth easing would betray the pixel grid. */
+
+@font-face {
+  font-family: 'Geist';
+  src: url('fonts/Geist-Variable.woff2') format('woff2');
+  font-weight: 100 900; font-style: normal; font-display: block;
+}
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('fonts/GeistMono-Variable.woff2') format('woff2');
+  font-weight: 100 900; font-style: normal; font-display: block;
+}
+@font-face {
+  font-family: 'Geist Pixel';
+  src: url('fonts/GeistPixel.woff2') format('woff2');
+  font-weight: 400; font-style: normal; font-display: block;
+}
+
+:root {
+  --bg:    #0A0A0A;
+  --fg:    #EDEDED;
+  --dim:   #6B6B73;
+  --amber: #F5A623;
+  --red:   #E5484D;
+
+  --sans:  'Geist', ui-sans-serif, system-ui, sans-serif;
+  --mono:  'Geist Mono', ui-monospace, SFMono-Regular, monospace;
+  --pixel: 'Geist Pixel', ui-monospace, monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  display: grid;
+  place-items: center;
+  padding: 28px;
+  overflow: hidden;
+}
+
+/* ---- CRT overlay ------------------------------------------------------ */
+/* Scanlines drift by whole pixels, never fractions, so the grid stays crisp. */
+.crt {
+  position: fixed; inset: 0; z-index: 9; pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg, rgba(0,0,0,.30) 0px, rgba(0,0,0,.30) 1px,
+    transparent 1px, transparent 3px);
+  animation: scan 5s steps(3, end) infinite;
+}
+.crt::after {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse at center, transparent 52%, rgba(0,0,0,.6) 100%);
+}
+@keyframes scan { from { background-position: 0 0; } to { background-position: 0 3px; } }
+
+main { width: 100%; max-width: 660px; }
+.screen[hidden] { display: none; }
+
+/* ---- menu -------------------------------------------------------------- */
+
+.wordmark {
+  font-family: var(--pixel);
+  font-size: 46px;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: .03em;
+  color: var(--amber);
+  margin: 0 0 44px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 2.2em 1fr auto;
+  align-items: baseline;
+  gap: 1em;
+  font-size: 13px;
+  line-height: 2.25;
+  color: var(--dim);
+  cursor: pointer;
+  user-select: none;
+}
+.row .n { color: var(--dim); }
+.row[data-on='true'] { color: var(--fg); }
+.row[data-on='true'] .state { color: var(--amber); }
+
+.levels { margin-bottom: 28px; }
+
+.opt {
+  display: grid;
+  grid-template-columns: 7em 1fr;
+  align-items: baseline;
+  font-size: 13px; line-height: 2.25; color: var(--dim);
+}
+.opt .k { letter-spacing: .14em; }
+.opt .choices { display: flex; gap: 1.3em; }
+.opt .choice { cursor: pointer; user-select: none; }
+.opt .choice[data-on='true'] { color: var(--amber); }
+
+.start {
+  margin-top: 36px; font-size: 12px; letter-spacing: .16em; color: var(--dim);
+  cursor: pointer; user-select: none;
+}
+.start b { color: var(--amber); font-weight: 400; }
+.start[data-ready='true'] { animation: pulse 1.4s steps(2, end) infinite; }
+@keyframes pulse { 0%,50% { color: var(--fg); } 51%,100% { color: var(--dim); } }
+
+/* ---- hud --------------------------------------------------------------- */
+
+.hud {
+  display: flex; align-items: center; gap: 1.4em;
+  font-size: 11px; letter-spacing: .16em; color: var(--dim);
+}
+.hud .brand { color: var(--amber); }
+.hud .clock { margin-left: auto; color: var(--fg); font-size: 12px; }
+.hud .stat b {
+  font-family: var(--pixel); font-size: 24px; font-weight: 400;
+  color: var(--fg); letter-spacing: .02em; vertical-align: -.12em;
+  margin-left: .5em;
+}
+
+/* Depleting block bar: discrete cells, so time reads as pixels draining. */
+.bar { display: flex; gap: 2px; flex: 1; }
+.bar i { flex: 1; height: 10px; background: var(--dim); opacity: .22; }
+.bar i[data-on='true'] { opacity: 1; background: var(--amber); }
+.bar[data-low='true'] i[data-on='true'] {
+  background: var(--red);
+  animation: flick .6s steps(2, end) infinite;
+}
+@keyframes flick { 0%,50% { opacity: 1; } 51%,100% { opacity: .45; } }
+
+.pips { display: inline-flex; gap: 3px; margin-left: .6em; vertical-align: -1px; }
+.pips i { width: 9px; height: 9px; background: var(--dim); opacity: .22; }
+.pips i[data-on='true'] { opacity: 1; background: var(--amber); }
+.pips[data-broke='true'] i { animation: brk .32s steps(2, end); }
+@keyframes brk {
+  0%,49%   { background: var(--red); opacity: 1; }
+  50%,100% { background: var(--dim); opacity: .22; }
+}
+
+#score.hit { animation: pop .2s steps(3, end); }
+@keyframes pop { 0% { color: var(--amber); } 100% { color: var(--fg); } }
+
+/* ---- stage ------------------------------------------------------------- */
+
+.stage { padding: 58px 0 54px; }
+.stage[data-fresh='true'] .givens,
+.stage[data-fresh='true'] .solve { animation: rev .1s steps(2, end); }
+@keyframes rev { from { opacity: 0; } to { opacity: 1; } }
+
+.givens {
+  display: flex; flex-wrap: wrap; gap: .4em 1.5em;
+  font-size: 20px; margin-bottom: 30px;
+}
+.given .sym { color: var(--dim); margin-right: .45em; }
+.given .val { color: var(--fg); }
+
+.solve { position: relative; display: flex; align-items: baseline; }
+.solve .label {
+  font-family: var(--pixel); font-size: 42px; line-height: 1.1;
+  color: var(--amber); min-width: 3.4em;
+}
+.field {
+  font-family: var(--pixel); font-size: 42px; line-height: 1.1;
+  display: inline-flex; align-items: baseline; min-width: 6ch;
+}
+.typed { color: var(--fg); }
+
+/* A solid block, not a hairline: the caret is part of the pixel language. */
+.caret {
+  display: inline-block; width: .52em; height: .82em;
+  background: var(--amber); margin-left: .06em;
+  animation: blink 1s steps(1, end) infinite;
+}
+@keyframes blink { 0%,49% { opacity: 1; } 50%,100% { opacity: 0; } }
+
+/* Real field sits invisible over the rendered one, so it still takes focus. */
+#answer {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  opacity: 0; border: 0; outline: 0; background: transparent;
+  font: inherit; color: transparent; cursor: default;
+}
+
+/* Height is reserved on every problem so a mixed run never jumps. */
+.trades {
+  margin-top: 30px; min-height: 3.6em;
+  font-size: 14px; line-height: 1.75; color: var(--dim);
+}
+.trades[data-empty='true'] { visibility: hidden; }
+.trades .key {
+  display: inline-block; min-width: 1.6em;
+  color: var(--amber); font-family: var(--mono);
+}
+
+/* ---- results ----------------------------------------------------------- */
+
+.over {
+  font-family: var(--pixel); font-size: 40px; font-weight: 400;
+  color: var(--amber); margin: 0 0 26px; letter-spacing: .03em;
+}
+.finals { display: flex; flex-wrap: wrap; gap: 1.6em 2.6em; margin-bottom: 34px; }
+.final { font-size: 11px; letter-spacing: .16em; color: var(--dim); }
+.final b {
+  display: block; margin-top: .5em;
+  font-family: var(--pixel); font-size: 26px; font-weight: 400;
+  letter-spacing: .02em; color: var(--fg);
+}
+
+.breakdown {
+  display: grid;
+  grid-template-columns: 2.2em max-content 3.5em 4em 7em;
+  align-items: baseline; column-gap: 1em;
+  font-size: 13px; line-height: 2.2; margin-bottom: 30px;
+}
+.bd { display: contents; }
+.bd .n { color: var(--dim); }
+.bd .v { text-align: right; color: var(--fg); }
+.bd .missed { text-align: right; color: var(--red); font-size: 11px; letter-spacing: .1em; }
+.empty { grid-column: 1 / -1; color: var(--dim); }
+
+/* ---- history ----------------------------------------------------------- */
+
+.cap {
+  font-size: 11px; letter-spacing: .16em; color: var(--dim); margin-bottom: 10px;
+}
+
+.runs {
+  display: grid;
+  grid-template-columns: 4.4em 3.6em 3.2em 2.8em 5em 3em;
+  align-items: baseline; column-gap: 1.1em;
+  font-size: 13px; line-height: 2.1; margin-bottom: 30px;
+}
+.run { display: contents; }
+.run span { color: var(--dim); }
+.run .score { color: var(--fg); text-align: right; }
+.run .rate { text-align: right; }
+.run .flag { color: var(--amber); }
+.run[data-best='true'] span { color: var(--fg); }
+.run[data-best='true'] .score { color: var(--amber); }
+
+.lifetime {
+  display: grid;
+  grid-template-columns: 2.2em max-content 3.4em 4em;
+  align-items: baseline; column-gap: 1.1em;
+  font-size: 13px; line-height: 2.1; margin-bottom: 30px;
+}
+.lt { display: contents; }
+.lt .n { color: var(--dim); }
+.lt .v { text-align: right; color: var(--fg); }
+
+.empty {
+  grid-column: 1 / -1; color: var(--dim);
+  font-size: 13px; white-space: nowrap;
+}
+
+.misses { margin-bottom: 30px; }
+.misses .cap {
+  font-size: 11px; letter-spacing: .16em; color: var(--dim); margin-bottom: 10px;
+}
+.miss { font-size: 13px; line-height: 1.95; color: var(--dim); }
+.miss .was { color: var(--amber); }
