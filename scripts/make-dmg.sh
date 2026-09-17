@@ -4,7 +4,8 @@
 #   ./scripts/make-dmg.sh [outdir]        # default: ./dist
 #
 # Unsigned builds still trip Gatekeeper on another machine. To produce a disk
-# image that opens first try, you need an Apple Developer Program membership:
+# image that opens first try you need an Apple Developer Program membership;
+# see the Releasing section of AGENTS.md.
 #
 #   SIGN_ID="Developer ID Application: Your Name (TEAMID)" \
 #   NOTARY_PROFILE=paritymac ./scripts/make-dmg.sh
@@ -50,8 +51,8 @@ if [ -n "${NOTARY_PROFILE:-}" ]; then
   xcrun stapler staple "$DMG"
   spctl -a -t open --context context:primary-signature -v "$DMG" || true
 else
-  echo "==> not notarised: this image will show Gatekeeper's warning on"
-  echo "    another Mac. See the README."
+  echo "==> not notarised: on another Mac this image shows Gatekeeper's"
+  echo "    warning and needs one right-click -> Open. See AGENTS.md."
 fi
 
 echo "==> built: $DMG  ($(du -h "$DMG" | cut -f1))"
